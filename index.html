@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FL Studio-like Audio Editor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Mixer Panel -->
+      <div class="mixer">
+        <div class="mixer-header">
+          <h3>Mixer</h3>
+          <button class="settings-button" title="Mixer Settings">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                fill="currentColor"
+                d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div id="mixer-channels">
+          <div class="mixer-channel">
+            <div class="channel-header">
+              <div>Track 1</div>
+              <button class="arm-button" title="Arm track for recording">
+                <svg
+                  viewBox="0 0 24 24"
+                  class="record-icon"
+                  width="16"
+                  height="16"
+                >
+                  <circle cx="12" cy="12" r="8"></circle>
+                </svg>
+              </button>
+            </div>
+            <div class="channel-controls">
+              <select class="input-selector">
+                <option value="none">None</option>
+              </select>
+              <div class="input-meter">
+                <div class="input-meter-fill"></div>
+              </div>
+              <input type="range" class="fader" min="0" max="100" value="80" />
+              <div>Volume: 80%</div>
+            </div>
+          </div>
+          <div class="mixer-channel">
+            <div class="channel-header">
+              <div>Track 2</div>
+              <button class="arm-button" title="Arm track for recording">
+                <svg
+                  viewBox="0 0 24 24"
+                  class="record-icon"
+                  width="16"
+                  height="16"
+                >
+                  <circle cx="12" cy="12" r="8"></circle>
+                </svg>
+              </button>
+            </div>
+            <div class="channel-controls">
+              <select class="input-selector">
+                <option value="none">None</option>
+              </select>
+              <div class="input-meter">
+                <div class="input-meter-fill"></div>
+              </div>
+              <input type="range" class="fader" min="0" max="100" value="80" />
+              <div>Volume: 80%</div>
+            </div>
+          </div>
+          <div class="mixer-channel">
+            <div class="channel-header">
+              <div>Track 3</div>
+              <button class="arm-button" title="Arm track for recording">
+                <svg
+                  viewBox="0 0 24 24"
+                  class="record-icon"
+                  width="16"
+                  height="16"
+                >
+                  <circle cx="12" cy="12" r="8"></circle>
+                </svg>
+              </button>
+            </div>
+            <div class="channel-controls">
+              <select class="input-selector">
+                <option value="none">None</option>
+              </select>
+              <div class="input-meter">
+                <div class="input-meter-fill"></div>
+              </div>
+              <input type="range" class="fader" min="0" max="100" value="80" />
+              <div>Volume: 80%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Section -->
+      <div class="timeline">
+        <!-- Transport Controls -->
+        <div class="timeline-header">
+          <div class="transport">
+            <button id="play">Play</button>
+            <button id="stop">Stop</button>
+            <span id="time">00:00:00</span>
+            <div class="display-mode">
+              <div class="segmented-control">
+                <button class="segment active" data-mode="beats">Beats</button>
+                <button class="segment" data-mode="time">Time</button>
+              </div>
+            </div>
+          </div>
+          <div class="bpm-control">
+            <label for="bpm-input">BPM:</label>
+            <input
+              type="number"
+              id="bpm-input"
+              min="20"
+              max="300"
+              value="120"
+              class="bpm-input"
+            />
+          </div>
+          <div class="record-controls">
+            <button id="record" class="record">Record</button>
+          </div>
+        </div>
+
+        <!-- New Timescale -->
+        <div class="timescale">
+          <canvas id="timescale-canvas"></canvas>
+        </div>
+
+        <!-- Tracks Container with Playhead -->
+        <div class="tracks-container">
+          <div class="playhead-container">
+            <div class="playhead-caret"></div>
+            <div class="playhead-line"></div>
+          </div>
+          <!-- Empty Tracks -->
+          <div class="track" data-track-id="1"></div>
+          <div class="track" data-track-id="2"></div>
+          <div class="track" data-track-id="3"></div>
+          <div class="track" data-track-id="4"></div>
+          <div class="track" data-track-id="5"></div>
+          <div class="track" data-track-id="6"></div>
+          <div class="track" data-track-id="7"></div>
+          <div class="track" data-track-id="8"></div>
+          <div class="track" data-track-id="9"></div>
+          <div class="track" data-track-id="10"></div>
+          <div class="track" data-track-id="11"></div>
+          <div class="track" data-track-id="12"></div>
+          <div class="track" data-track-id="13"></div>
+          <div class="track" data-track-id="14"></div>
+          <div class="track" data-track-id="15"></div>
+          <div class="track" data-track-id="16"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Context and Media Elements -->
+    <div id="audio-elements" style="display: none"></div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settings-modal">
+      <div class="settings-content">
+        <div class="settings-header">
+          <h3>Mixer Settings</h3>
+          <button class="close-settings">&times;</button>
+        </div>
+        <div class="settings-body">
+          <div class="setting-group">
+            <label>Audio Output</label>
+            <button id="open-system-settings" class="system-settings-button">
+              Open System Audio Settings
+            </button>
+            <p class="settings-note">
+              Change your audio output device in your system's sound settings.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="main.js"></script>
+  </body>
+</html>

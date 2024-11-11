@@ -1,0 +1,753 @@
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background: #2a2a2a;
+  color: #fff;
+  line-height: 1.5;
+}
+
+/* Main Layout */
+.container {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Mixer Panel Styles */
+.mixer {
+  background: #1a1a1a;
+  padding: 15px;
+  border-right: 1px solid #3a3a3a;
+  overflow-y: auto;
+}
+
+.mixer h3 {
+  margin-bottom: 15px;
+  color: #4a90e2;
+  font-size: 1.2em;
+}
+
+.mixer-channel {
+  background: #2a2a2a;
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mixer-channel:hover {
+  background: #323232;
+}
+
+.fader {
+  width: 100%;
+  margin: 10px 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #3a3a3a;
+  border-radius: 2px;
+  outline: none;
+}
+
+.fader::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #4a90e2;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.fader::-webkit-slider-thumb:hover {
+  background: #357abd;
+}
+
+.fader::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #4a90e2;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Timeline Section Styles */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #2a2a2a;
+}
+
+.timeline-header {
+  height: 40px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  justify-content: space-between;
+}
+
+/* Transport Controls */
+.transport {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.transport button {
+  background: transparent;
+  border: 1px solid #4a4a4a;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+.transport button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #5a5a5a;
+}
+
+#time {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #888;
+  min-width: 65px;
+}
+
+/* Recording Controls */
+.record-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+button.record {
+  background: transparent;
+  border: 1px solid #e24a4a;
+  padding: 4px 12px;
+  border-radius: 3px;
+  color: #e24a4a;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+button.record:hover {
+  background: rgba(226, 74, 74, 0.1);
+}
+
+button.record.active {
+  background: #e24a4a;
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+/* Tracks Container */
+.tracks-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #252525;
+  cursor: pointer;
+  background-image: 
+    /* Bar lines */ linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px
+    ),
+    /* Beat lines */
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: calc(400px) 100%, calc(100px) 100%;
+  min-height: 0;
+}
+
+.track {
+  height: 80px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.track:hover {
+  background: #303030;
+}
+
+/* Clip Styles */
+.clip {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  height: 70px;
+  top: 5px;
+  background: #3c3c3c50;
+  border-radius: 4px;
+  cursor: move;
+  user-select: none;
+  overflow: hidden;
+  padding: 5px;
+  font-size: 0.9em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clip-name {
+  color: white;
+  font-size: 0.8em;
+  padding: 2px 0;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 20px;
+}
+
+.clip canvas {
+  width: 100%;
+  height: 40px;
+  margin-top: 2px;
+}
+
+.clip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.clip.dragging {
+  opacity: 0.7;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.clip.recording {
+  background: rgba(226, 74, 74, 0.5);
+  animation: grow 0.5s infinite alternate;
+  backdrop-filter: blur(2px);
+}
+
+.clip.recording:hover {
+  background: rgba(226, 74, 74, 0.6);
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0.95);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a;
+}
+
+/* Utility Classes */
+.hidden {
+  display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .mixer {
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #3a3a3a;
+  }
+}
+
+/* Timescale */
+.timescale {
+  height: 30px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #3a3a3a;
+  position: relative;
+  overflow: visible;
+  z-index: 998;
+  background-image: 
+    /* Bar lines */ linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.15) 1px,
+      transparent 1px
+    ),
+    /* Beat lines */
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: calc(400px) 100%, calc(100px) 100%;
+}
+
+#timescale-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Playhead container */
+.playhead-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Playhead line */
+.playhead-line {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100vh;
+  background: #6f6f6f;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+/* Playhead caret */
+.playhead-caret {
+  position: absolute;
+  top: -15px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ff5500;
+  transform: rotate(45deg);
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 1001;
+}
+
+/* Active dragging states */
+.playhead-line:active,
+.playhead-caret:active {
+  cursor: grabbing;
+}
+
+/* Update tracks container */
+.tracks-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #252525;
+  cursor: pointer;
+}
+
+/* Update timescale to ensure proper layering */
+.timescale {
+  height: 30px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #3a3a3a;
+  position: relative;
+  overflow: visible;
+  z-index: 998;
+}
+
+/* BPM Control */
+.bpm-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  font-size: 0.85em;
+}
+
+.bpm-input {
+  width: 54px;
+  height: 22px;
+  background: transparent;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  color: #fff;
+  padding: 0 4px;
+  font-size: 0.9em;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.bpm-input:hover {
+  border-color: #5a5a5a;
+}
+
+.bpm-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+/* Style the spinner buttons */
+.bpm-input::-webkit-inner-spin-button,
+.bpm-input::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 22px;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Custom spinner buttons */
+.bpm-input::-webkit-inner-spin-button {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='14' viewBox='0 0 8 14'%3E%3Cpath fill='%23888' d='M4 0l4 4H0zM4 14l4-4H0z'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 16px;
+  margin-right: 4px;
+}
+
+/* Display Mode Switch */
+.display-mode {
+  margin-left: 8px;
+}
+
+.segmented-control {
+  display: flex;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  overflow: hidden;
+  height: 22px;
+}
+
+.segment {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s;
+  border-right: 1px solid #4a4a4a;
+}
+
+.segment:last-child {
+  border-right: none;
+}
+
+.segment:hover:not(.active) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.segment.active {
+  background: rgba(74, 144, 226, 0.1);
+  color: #4a90e2;
+}
+
+.channel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-right: 4px;
+}
+
+.arm-button {
+  background: transparent;
+  border: 1px solid #4a4a4a;
+  color: #666;
+  padding: 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s;
+}
+
+.arm-button:hover {
+  border-color: #e24a4a;
+  color: #e24a4a;
+  background: rgba(226, 74, 74, 0.1);
+}
+
+.arm-button.armed {
+  background: #e24a4a;
+  border-color: #e24a4a;
+  color: white;
+}
+
+.channel-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-selector {
+  background: #2a2a2a;
+  border: 1px solid #4a4a4a;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.input-selector:hover {
+  border-color: #5a5a5a;
+}
+
+.input-selector:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+/* Input meter styles */
+.input-meter {
+  width: 100%;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.input-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: #4a90e2;
+  transition: width 0.05s;
+}
+
+/* Input selector error state */
+.input-selector.error {
+  border-color: #e24a4a;
+  background: rgba(226, 74, 74, 0.1);
+}
+
+/* Disabled arm button */
+.arm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #666;
+  color: #666;
+  background: transparent;
+}
+
+/* Add tooltip styles */
+[title] {
+  position: relative;
+}
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+/* Add styles for the record icon */
+.record-icon {
+  fill: currentColor;
+}
+
+.arm-button.armed .record-icon {
+  fill: white;
+}
+
+/* Add these new styles */
+.mixer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.settings-button {
+  background: transparent;
+  border: 1px solid #4a4a4a;
+  color: #888;
+  padding: 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s;
+}
+
+.settings-button:hover {
+  border-color: #4a90e2;
+  color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+/* Settings Modal */
+.settings-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal.show {
+  display: flex;
+}
+
+.settings-content {
+  background: #2a2a2a;
+  border-radius: 6px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.settings-header h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.close-settings {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  transition: color 0.2s;
+}
+
+.close-settings:hover {
+  color: #fff;
+}
+
+.settings-body {
+  padding: 15px;
+}
+
+.setting-group {
+  margin-bottom: 15px;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #888;
+  font-size: 0.9em;
+}
+
+.output-selector {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  color: #fff;
+  padding: 8px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.output-selector:hover {
+  border-color: #5a5a5a;
+}
+
+.output-selector:focus {
+  outline: none;
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+/* Add these styles for the system settings button and note */
+.system-settings-button {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid #4a4a4a;
+  color: #fff;
+  padding: 8px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.system-settings-button:hover {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: #4a90e2;
+  color: #4a90e2;
+}
+
+.settings-note {
+  margin-top: 8px;
+  color: #888;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
