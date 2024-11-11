@@ -25,14 +25,17 @@
           </div>
           <button class="mixer-toggle" title="Toggle Mixer">
             <svg viewBox="0 0 24 24" width="16" height="16">
-              <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+              <path
+                fill="currentColor"
+                d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"
+              />
             </svg>
           </button>
         </div>
         <div id="mixer-channels">
           <div class="mixer-channel">
             <div class="channel-header">
-              <div>Track 1</div>
+              <div>Channel 1</div>
               <button class="arm-button" title="Arm track for recording">
                 <svg
                   viewBox="0 0 24 24"
@@ -51,13 +54,22 @@
               <div class="input-meter">
                 <div class="input-meter-fill"></div>
               </div>
-              <input type="range" class="fader" min="0" max="100" value="80" />
-              <div>Volume: 80%</div>
+              <div class="fader-container">
+                <input
+                  type="range"
+                  class="fader"
+                  min="0"
+                  max="100"
+                  value="80"
+                  orient="vertical"
+                />
+                <div class="volume-label">80</div>
+              </div>
             </div>
           </div>
           <div class="mixer-channel">
             <div class="channel-header">
-              <div>Track 2</div>
+              <div>Channel 2</div>
               <button class="arm-button" title="Arm track for recording">
                 <svg
                   viewBox="0 0 24 24"
@@ -76,13 +88,22 @@
               <div class="input-meter">
                 <div class="input-meter-fill"></div>
               </div>
-              <input type="range" class="fader" min="0" max="100" value="80" />
-              <div>Volume: 80%</div>
+              <div class="fader-container">
+                <input
+                  type="range"
+                  class="fader"
+                  min="0"
+                  max="100"
+                  value="80"
+                  orient="vertical"
+                />
+                <div class="volume-label">80</div>
+              </div>
             </div>
           </div>
           <div class="mixer-channel">
             <div class="channel-header">
-              <div>Track 3</div>
+              <div>Channel 3</div>
               <button class="arm-button" title="Arm track for recording">
                 <svg
                   viewBox="0 0 24 24"
@@ -101,8 +122,17 @@
               <div class="input-meter">
                 <div class="input-meter-fill"></div>
               </div>
-              <input type="range" class="fader" min="0" max="100" value="80" />
-              <div>Volume: 80%</div>
+              <div class="fader-container">
+                <input
+                  type="range"
+                  class="fader"
+                  min="0"
+                  max="100"
+                  value="80"
+                  orient="vertical"
+                />
+                <div class="volume-label">80</div>
+              </div>
             </div>
           </div>
         </div>
@@ -140,7 +170,10 @@
           <div class="snap-controls">
             <button class="snap-toggle active" title="Toggle Snap">
               <svg viewBox="0 0 24 24" width="16" height="16">
-                <path fill="currentColor" d="M19,19H5V5H19V19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M11,7H13V11H17V13H13V17H11V13H7V11H11V7Z"/>
+                <path
+                  fill="currentColor"
+                  d="M19,19H5V5H19V19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M11,7H13V11H17V13H13V17H11V13H7V11H11V7Z"
+                />
               </svg>
             </button>
             <select class="snap-resolution" title="Snap Resolution">

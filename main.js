@@ -35,8 +35,8 @@ class AudioEditor {
       displayModeSwitch: document.getElementById("display-mode-switch"),
       armButtons: document.querySelectorAll(".arm-button"),
       meterFills: document.querySelectorAll(".input-meter-fill"),
-      timescaleCaret: document.querySelector('.timescale-caret'),
-      mixerToggle: document.querySelector('.mixer-toggle'),
+      timescaleCaret: document.querySelector(".timescale-caret"),
+      mixerToggle: document.querySelector(".mixer-toggle"),
       snapToggle: document.querySelector(".snap-toggle"),
       snapResolution: document.querySelector(".snap-resolution"),
     };
@@ -109,7 +109,7 @@ class AudioEditor {
     // Add new state for timescale dragging
     this.isDraggingTimescale = false;
     this.timescaleDragStartX = 0;
-    
+
     // Initialize the timescale caret handlers
     this.initializeTimescaleCaret();
 
@@ -513,10 +513,12 @@ class AudioEditor {
         return new Promise((resolve) => {
           if (recorder.state === "recording") {
             const currentClip = this.recordingClips[index];
-            
+
             recorder.onstop = async () => {
               if (recorder.audioChunks && recorder.audioChunks.length > 0) {
-                const audioBlob = new Blob(recorder.audioChunks, { type: "audio/webm" });
+                const audioBlob = new Blob(recorder.audioChunks, {
+                  type: "audio/webm",
+                });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audio = new Audio(audioUrl);
 
@@ -536,8 +538,12 @@ class AudioEditor {
                   currentClip.appendChild(canvas);
                   currentClip.audioElement = audio;
                   currentClip.classList.remove("recording");
-                  currentClip.addEventListener("dragstart", (e) => this.handleDragStart(e));
-                  currentClip.addEventListener("dragend", (e) => this.handleDragEnd(e));
+                  currentClip.addEventListener("dragstart", (e) =>
+                    this.handleDragStart(e)
+                  );
+                  currentClip.addEventListener("dragend", (e) =>
+                    this.handleDragEnd(e)
+                  );
                 } catch (err) {
                   console.error("Error processing recording:", err);
                   // Remove failed clip
@@ -549,7 +555,7 @@ class AudioEditor {
               }
               resolve();
             };
-            
+
             recorder.stop();
           } else {
             resolve();
@@ -588,11 +594,11 @@ class AudioEditor {
   // Drag and drop handlers
   handleDragStart(e) {
     // Find the parent clip element if dragging started on a child element
-    this.draggedClip = e.target.closest('.clip');
+    this.draggedClip = e.target.closest(".clip");
     if (!this.draggedClip) return;
 
     // Hide the default ghost image
-    e.dataTransfer.setDragImage(document.createElement('div'), 0, 0);
+    e.dataTransfer.setDragImage(document.createElement("div"), 0, 0);
 
     // Calculate offset from the left edge of the clip
     this.dragOffset = e.clientX - this.draggedClip.getBoundingClientRect().left;
@@ -609,15 +615,18 @@ class AudioEditor {
     e.preventDefault();
     if (this.draggedClip) {
       // Find the track being dragged over
-      const track = e.target.closest('.track');
+      const track = e.target.closest(".track");
       if (!track) return;
 
       const rect = track.getBoundingClientRect();
-      let newLeft = Math.max(0, e.clientX - rect.left + track.scrollLeft - this.dragOffset);
-      
+      let newLeft = Math.max(
+        0,
+        e.clientX - rect.left + track.scrollLeft - this.dragOffset
+      );
+
       // Apply snap
       newLeft = this.calculateSnapPoints(newLeft);
-      
+
       // Update clip position
       this.draggedClip.style.left = `${newLeft}px`;
 
@@ -631,11 +640,14 @@ class AudioEditor {
   handleDrop(e) {
     e.preventDefault();
     if (this.draggedClip) {
-      const track = e.target.closest('.track');
+      const track = e.target.closest(".track");
       if (!track) return;
 
       const rect = track.getBoundingClientRect();
-      const newLeft = Math.max(0, e.clientX - rect.left + track.scrollLeft - this.dragOffset);
+      const newLeft = Math.max(
+        0,
+        e.clientX - rect.left + track.scrollLeft - this.dragOffset
+      );
       this.draggedClip.style.left = `${newLeft}px`;
       // No need to append here since it's already in the correct track
     }
@@ -644,9 +656,11 @@ class AudioEditor {
   // Mixer handlers
   handleVolumeChange(e) {
     const value = e.target.value;
-    e.target.parentElement.querySelector(
-      "div:last-child"
-    ).textContent = `Volume: ${value}%`;
+    // Find the volume label within the fader container
+    const volumeLabel = e.target
+      .closest(".fader-container")
+      .querySelector(".volume-label");
+    volumeLabel.textContent = value;
 
     // If the clip has an audio element, update its volume
     const trackIndex = Array.from(this.elements.faders).indexOf(e.target);
@@ -714,7 +728,7 @@ class AudioEditor {
       const divisionsPerBeat = 1 / this.snapResolution;
       for (let beat = 0; beat < this.beatsPerBar; beat++) {
         for (let div = 1; div < divisionsPerBeat; div++) {
-          const divX = x + (beat * pixelsPerBeat) + (div * pixelsPerDivision);
+          const divX = x + beat * pixelsPerBeat + div * pixelsPerDivision;
           ctx.beginPath();
           ctx.moveTo(divX, height);
           ctx.lineTo(divX, 15);
@@ -726,8 +740,9 @@ class AudioEditor {
 
   handleTimelineClick(e) {
     const rect = this.elements.tracksContainer.getBoundingClientRect();
-    const clickX = e.clientX - rect.left + this.elements.tracksContainer.scrollLeft;
-    
+    const clickX =
+      e.clientX - rect.left + this.elements.tracksContainer.scrollLeft;
+
     // Apply snap
     this.playheadPosition = this.calculateSnapPoints(clickX);
     this.updatePlayhead();
@@ -735,7 +750,8 @@ class AudioEditor {
 
     // If playing, update the start time to maintain correct playback
     if (this.isPlaying) {
-      this.startTime = Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
+      this.startTime =
+        Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
     }
   }
 
@@ -772,7 +788,8 @@ class AudioEditor {
 
     // If playing, update the start time to maintain correct playback
     if (this.isPlaying) {
-      this.startTime = Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
+      this.startTime =
+        Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
     }
   }
 
@@ -799,7 +816,7 @@ class AudioEditor {
       /* Division lines (snap points) */
       linear-gradient(90deg, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
     `;
-    
+
     const gridSize = `${pixelsPerBar}px 100%, ${pixelsPerBeat}px 100%, ${pixelsPerDivision}px 100%`;
 
     this.elements.tracksContainer.style.backgroundImage = gridStyle;
@@ -819,7 +836,7 @@ class AudioEditor {
       this.bpm = Math.min(300, Math.max(20, newBPM));
       this.elements.bpmInput.value = this.bpm;
       this.pixelsPerBeat = this.pixelsPerSecond * (60 / this.bpm);
-      
+
       // Update both grid and timescale
       this.updateGrid();
       this.initializeTimescale();
@@ -1251,19 +1268,19 @@ class AudioEditor {
 
   // Add new method to initialize timescale caret
   initializeTimescaleCaret() {
-    this.elements.timescaleCaret.addEventListener('mousedown', (e) => {
+    this.elements.timescaleCaret.addEventListener("mousedown", (e) => {
       e.preventDefault();
       this.isDraggingTimescale = true;
       this.timescaleDragStartX = e.clientX - this.playheadPosition;
-      this.elements.timescaleCaret.classList.add('dragging');
+      this.elements.timescaleCaret.classList.add("dragging");
     });
 
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener("mousemove", (e) => {
       if (!this.isDraggingTimescale) return;
 
       const rect = this.elements.timescaleCanvas.getBoundingClientRect();
       const containerScrollLeft = this.elements.tracksContainer.scrollLeft;
-      
+
       let newPosition = e.clientX - rect.left + containerScrollLeft;
       newPosition = Math.max(0, newPosition);
 
@@ -1274,79 +1291,85 @@ class AudioEditor {
 
       // If playing, update the start time to maintain correct playback
       if (this.isPlaying) {
-        this.startTime = Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
+        this.startTime =
+          Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
       }
     });
 
-    document.addEventListener('mouseup', () => {
+    document.addEventListener("mouseup", () => {
       if (!this.isDraggingTimescale) return;
-      
+
       this.isDraggingTimescale = false;
-      this.elements.timescaleCaret.classList.remove('dragging');
+      this.elements.timescaleCaret.classList.remove("dragging");
     });
   }
 
   // Add new method to handle timescale clicks
   initializeTimescaleClick() {
-    this.elements.timescaleCanvas.addEventListener('click', (e) => {
+    this.elements.timescaleCanvas.addEventListener("click", (e) => {
       const rect = this.elements.timescaleCanvas.getBoundingClientRect();
-      const clickX = e.clientX - rect.left + this.elements.tracksContainer.scrollLeft;
-      
+      const clickX =
+        e.clientX - rect.left + this.elements.tracksContainer.scrollLeft;
+
       // Apply snap
       this.playheadPosition = this.calculateSnapPoints(clickX);
       this.updatePlayhead();
       this.updateTimeDisplay();
 
       if (this.isPlaying) {
-        this.startTime = Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
+        this.startTime =
+          Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
       }
     });
   }
 
   initializeMixerResize() {
     const mixer = this.elements.mixer;
-    const handle = document.querySelector('.mixer-resize-handle');
+    const handle = document.querySelector(".mixer-resize-handle");
     let startY, startHeight;
     let customHeight = null; // Track custom height
 
     const startResize = (e) => {
       startY = e.clientY;
       startHeight = parseInt(getComputedStyle(mixer).height, 10);
-      document.addEventListener('mousemove', resize);
-      document.addEventListener('mouseup', stopResize);
-      document.body.style.cursor = 'ns-resize';
+      document.addEventListener("mousemove", resize);
+      document.addEventListener("mouseup", stopResize);
+      document.body.style.cursor = "ns-resize";
       e.preventDefault();
     };
 
     const resize = (e) => {
       const diff = startY - e.clientY;
-      customHeight = Math.max(40, Math.min(startHeight + diff, window.innerHeight * 0.8));
-      mixer.style.height = customHeight + 'px';
+      customHeight = Math.max(
+        40,
+        Math.min(startHeight + diff, window.innerHeight * 0.8)
+      );
+      mixer.style.height = customHeight + "px";
     };
 
     const stopResize = () => {
-      document.removeEventListener('mousemove', resize);
-      document.removeEventListener('mouseup', stopResize);
-      document.body.style.cursor = '';
+      document.removeEventListener("mousemove", resize);
+      document.removeEventListener("mouseup", stopResize);
+      document.body.style.cursor = "";
     };
 
-    handle.addEventListener('mousedown', startResize);
+    handle.addEventListener("mousedown", startResize);
 
     // Single mixer toggle event listener
     const toggleButton = this.elements.mixerToggle;
-    toggleButton.addEventListener('click', () => {
-      const isMinimized = mixer.classList.toggle('minimized');
-      
+    toggleButton.addEventListener("click", () => {
+      const isMinimized = mixer.classList.toggle("minimized");
+
       if (!isMinimized && customHeight) {
         // Restore custom height when maximizing
-        mixer.style.height = customHeight + 'px';
+        mixer.style.height = customHeight + "px";
       } else if (isMinimized) {
         // Clear custom height when minimizing
-        mixer.style.height = '';
+        mixer.style.height = "";
       }
-      
+
       // Update toggle button icon
-      toggleButton.innerHTML = isMinimized 
+      toggleButton.innerHTML = isMinimized
         ? `<svg viewBox="0 0 24 24" width="16" height="16">
             <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
           </svg>`
@@ -1377,7 +1400,7 @@ class AudioEditor {
 
   // Add method to toggle snap settings
   toggleSnap(type) {
-    if (type === 'enabled') {
+    if (type === "enabled") {
       this.snapEnabled = !this.snapEnabled;
     } else {
       this.snapPoints[type] = !this.snapPoints[type];
@@ -1386,21 +1409,21 @@ class AudioEditor {
 
   // Add new method to initialize snap controls
   initializeSnapControls() {
-    this.elements.snapToggle.addEventListener('click', () => {
+    this.elements.snapToggle.addEventListener("click", () => {
       this.snapEnabled = !this.snapEnabled;
-      this.elements.snapToggle.classList.toggle('active', this.snapEnabled);
-      
+      this.elements.snapToggle.classList.toggle("active", this.snapEnabled);
+
       if (!this.snapEnabled) {
-        this.elements.snapToggle.style.opacity = '0.5';
+        this.elements.snapToggle.style.opacity = "0.5";
         this.elements.snapResolution.disabled = true;
       } else {
-        this.elements.snapToggle.style.opacity = '1';
+        this.elements.snapToggle.style.opacity = "1";
         this.elements.snapResolution.disabled = false;
       }
     });
 
     // Update snap resolution handler to update grid
-    this.elements.snapResolution.addEventListener('change', (e) => {
+    this.elements.snapResolution.addEventListener("change", (e) => {
       this.snapResolution = parseFloat(e.target.value);
       this.updateGrid(); // Update grid when snap resolution changes
     });
