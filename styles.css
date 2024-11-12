@@ -233,6 +233,7 @@ button.record.active {
   font-size: 0.9em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
 }
 
 .clip-name {
@@ -937,4 +938,44 @@ button.record.active {
 .snap-resolution option {
   background: #2a2a2a;
   color: #fff;
+}
+
+/* Add these styles for trim handles */
+.clip {
+  /* ... existing styles ... */
+  position: relative; /* Ensure this is set */
+}
+
+.trim-handle {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.trim-handle:hover {
+  opacity: 1;
+  background: rgba(74, 144, 226, 0.3);
+}
+
+.trim-handle.left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+.trim-handle.right {
+  right: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.clip:hover .trim-handle {
+  opacity: 0.5;
+}
+
+.clip.trimming {
+  cursor: ew-resize;
 }

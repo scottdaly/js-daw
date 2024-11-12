@@ -39,6 +39,7 @@ class AudioEditor {
       mixerToggle: document.querySelector(".mixer-toggle"),
       snapToggle: document.querySelector(".snap-toggle"),
       snapResolution: document.querySelector(".snap-resolution"),
+      timescale: document.querySelector(".timescale"),
     };
 
     // Drag state
@@ -129,6 +130,14 @@ class AudioEditor {
 
     // Initialize grid
     this.updateGrid();
+
+    // Add trim state
+    this.isTrimming = false;
+    this.trimSide = null; // 'left' or 'right'
+    this.trimStartX = 0;
+    this.trimStartWidth = 0;
+    this.trimStartLeft = 0;
+    this.currentClip = null;
   }
 
   // Initialize all event listeners
@@ -382,66 +391,131 @@ class AudioEditor {
   async processRecording() {
     // Process each recording separately
     for (let i = 0; i < this.mediaRecorders.length; i++) {
-      const recorder = this.mediaRecorders[i];
-      const clip = this.recordingClips[i];
+        const recorder = this.mediaRecorders[i];
+        const clip = this.recordingClips[i];
 
-      if (recorder.audioChunks.length === 0) continue;
+        if (!recorder.audioChunks || recorder.audioChunks.length === 0) continue;
 
-      const audioBlob = new Blob(recorder.audioChunks, {
-        type: "audio/webm",
-      });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
+        try {
+            const audioBlob = new Blob(recorder.audioChunks, {
+                type: "audio/webm",
+            });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
 
-      try {
-        // Create waveform visualization
-        const audioBuffer = await this.audioContext.decodeAudioData(
-          await audioBlob.arrayBuffer()
-        );
-        const canvas = document.createElement("canvas");
-        this.drawWaveform(audioBuffer, canvas);
+            // Create audio buffer first
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            
+            // Store the audioBuffer in the clip element
+            clip.audioBuffer = audioBuffer;
 
-        // Set the output device if one is selected
-        if (this.currentOutput && audio.setSinkId) {
-          await audio.setSinkId(this.currentOutput);
+            // Create waveform visualization
+            const canvas = document.createElement("canvas");
+            canvas.width = clip.clientWidth;
+            canvas.height = 40;
+            this.drawWaveform(audioBuffer, canvas);
+
+            // Set the output device if one is selected
+            if (this.currentOutput && audio.setSinkId) {
+                await audio.setSinkId(this.currentOutput);
+            }
+
+            clip.appendChild(canvas);
+            clip.audioElement = audio;
+            
+            // Initialize clip timing properties
+            const clipDuration = audioBuffer.duration;
+            clip.startOffset = 0;
+            clip.endTime = clipDuration;
+            clip.originalLeft = parseInt(clip.style.left) || 0;
+            clip.duration = clipDuration;
+            
+            // Update clip width based on actual duration
+            const clipWidth = clipDuration * this.pixelsPerSecond;
+            clip.style.width = `${clipWidth}px`;
+
+            // Redraw waveform with correct width
+            canvas.width = clipWidth;
+            this.drawWaveform(audioBuffer, canvas);
+
+            // Add drag event listeners
+            clip.addEventListener("dragstart", (e) => this.handleDragStart(e));
+            clip.addEventListener("dragend", (e) => this.handleDragEnd(e));
+
+            // Add trim handles
+            const leftHandle = document.createElement('div');
+            leftHandle.className = 'trim-handle left';
+            
+            const rightHandle = document.createElement('div');
+            rightHandle.className = 'trim-handle right';
+            
+            clip.appendChild(leftHandle);
+            clip.appendChild(rightHandle);
+
+            // Add trim event listeners
+            this.initializeClipTrimming(clip);
+
+            console.log('Clip initialized:', {
+                duration: clipDuration,
+                startOffset: clip.startOffset,
+                endTime: clip.endTime,
+                width: clip.style.width
+            });
+
+        } catch (err) {
+            console.error("Error processing recording:", err);
+            if (clip && clip.parentNode) {
+                clip.parentNode.removeChild(clip);
+            }
         }
-
-        clip.appendChild(canvas);
-        clip.audioElement = audio;
-        clip.addEventListener("dragstart", (e) => this.handleDragStart(e));
-        clip.addEventListener("dragend", (e) => this.handleDragEnd(e));
-      } catch (err) {
-        console.error("Error processing recording:", err);
-      }
     }
 
     this.clipCounter++;
+    this.cleanupRecorders();
   }
 
   // Waveform visualization
-  drawWaveform(audioBuffer, canvas) {
-    // Set canvas size to match clip content area
-    canvas.width = this.recordingClips[0].clientWidth;
-    canvas.height = 40; // Height for waveform
-
+  drawWaveform(audioBuffer, canvas, startOffset = 0, endTime = null) {
     const data = audioBuffer.getChannelData(0);
-    const step = Math.ceil(data.length / canvas.width);
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#ffffff";
+    
+    // Calculate sample range based on trim points
+    const sampleRate = audioBuffer.sampleRate;
+    const startSample = Math.floor(startOffset * sampleRate);
+    const endSample = endTime ? Math.floor(endTime * sampleRate) : data.length;
+    const totalSamples = data.length;
+    
+    // Calculate scaling factors
+    const visibleSamples = endSample - startSample;
+    const samplesPerPixel = Math.ceil(visibleSamples / canvas.width);
     const amp = canvas.height / 2;
 
-    const context = canvas.getContext("2d");
-    context.fillStyle = "#ffffff";
+    // Calculate the position offset to maintain visual alignment
+    const positionOffset = (startSample / totalSamples) * canvas.width;
 
     for (let i = 0; i < canvas.width; i++) {
-      let min = 1.0;
-      let max = -1.0;
+        let min = 1.0;
+        let max = -1.0;
+        
+        // Calculate the actual sample position relative to the entire audio buffer
+        const sampleStart = startSample + Math.floor(i * (visibleSamples / canvas.width));
+        const sampleEnd = Math.min(sampleStart + samplesPerPixel, endSample);
+        
+        // Find min/max values for this pixel
+        for (let j = sampleStart; j < sampleEnd; j++) {
+            if (j >= 0 && j < data.length) {
+                const datum = data[j];
+                if (datum < min) min = datum;
+                if (datum > max) max = datum;
+            }
+        }
 
-      for (let j = 0; j < step; j++) {
-        const datum = data[i * step + j];
-        if (datum < min) min = datum;
-        if (datum > max) max = datum;
-      }
-
-      context.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+        // Draw the waveform segment at the correct position
+        const xPos = i;
+        context.fillRect(xPos, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
     }
   }
 
@@ -449,26 +523,52 @@ class AudioEditor {
   handlePlay() {
     if (!this.isPlaying) {
       this.isPlaying = true;
-      this.startTime =
-        Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
+      this.startTime = Date.now() - (this.playheadPosition / this.pixelsPerSecond) * 1000;
       this.updateTime();
 
       // Play all audio clips
-      document.querySelectorAll(".clip").forEach((clip) => {
+      document.querySelectorAll('.clip').forEach(clip => {
         if (clip.audioElement) {
-          const clipStartTime =
-            parseInt(clip.style.left) / this.pixelsPerSecond;
+          const clipLeft = parseInt(clip.style.left) || 0;
+          const clipStartTime = clipLeft / this.pixelsPerSecond;
           const currentTime = this.playheadPosition / this.pixelsPerSecond;
+          
+          const startOffset = clip.startOffset || 0;
+          const endTime = clip.endTime || clip.audioElement.duration;
+          const clipDuration = endTime - startOffset;
 
           if (currentTime < clipStartTime) {
             // Clip hasn't started yet
             setTimeout(() => {
-              clip.audioElement.play();
+              if (this.isPlaying) { // Check if still playing
+                clip.audioElement.currentTime = startOffset;
+                clip.audioElement.play();
+                
+                // Stop at the end of trimmed duration
+                setTimeout(() => {
+                  if (this.isPlaying) {
+                    clip.audioElement.pause();
+                  }
+                }, clipDuration * 1000);
+              }
             }, (clipStartTime - currentTime) * 1000);
           } else {
             // Clip should already be playing
-            clip.audioElement.currentTime = currentTime - clipStartTime;
-            clip.audioElement.play();
+            const elapsedClipTime = currentTime - clipStartTime;
+            const playbackPosition = startOffset + elapsedClipTime;
+            
+            if (playbackPosition < endTime) {
+              clip.audioElement.currentTime = playbackPosition;
+              clip.audioElement.play();
+              
+              // Stop at the end of trimmed duration
+              const remainingTime = endTime - playbackPosition;
+              setTimeout(() => {
+                if (this.isPlaying) {
+                  clip.audioElement.pause();
+                }
+              }, remainingTime * 1000);
+            }
           }
         }
       });
@@ -489,88 +589,16 @@ class AudioEditor {
     }
 
     // Stop all audio clips
-    document.querySelectorAll(".clip").forEach((clip) => {
+    document.querySelectorAll('.clip').forEach(clip => {
       if (clip.audioElement) {
         clip.audioElement.pause();
-        clip.audioElement.currentTime = 0;
+        clip.audioElement.currentTime = clip.startOffset || 0;
       }
     });
 
     // Stop recording if active
     if (this.isRecording) {
-      // First, stop the recording state
-      this.isRecording = false;
-      this.elements.recordButton.classList.remove("active");
-
-      // If there are no recorders or clips, clean up and return
-      if (!this.mediaRecorders || !this.recordingClips.length) {
-        this.cleanupRecorders();
-        return;
-      }
-
-      // Stop all recorders and wait for processing
-      const stopPromises = this.mediaRecorders.map((recorder, index) => {
-        return new Promise((resolve) => {
-          if (recorder.state === "recording") {
-            const currentClip = this.recordingClips[index];
-
-            recorder.onstop = async () => {
-              if (recorder.audioChunks && recorder.audioChunks.length > 0) {
-                const audioBlob = new Blob(recorder.audioChunks, {
-                  type: "audio/webm",
-                });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-
-                try {
-                  // Create waveform visualization
-                  const audioBuffer = await this.audioContext.decodeAudioData(
-                    await audioBlob.arrayBuffer()
-                  );
-                  const canvas = document.createElement("canvas");
-                  this.drawWaveform(audioBuffer, canvas);
-
-                  // Set the output device if one is selected
-                  if (this.currentOutput && audio.setSinkId) {
-                    await audio.setSinkId(this.currentOutput);
-                  }
-
-                  currentClip.appendChild(canvas);
-                  currentClip.audioElement = audio;
-                  currentClip.classList.remove("recording");
-                  currentClip.addEventListener("dragstart", (e) =>
-                    this.handleDragStart(e)
-                  );
-                  currentClip.addEventListener("dragend", (e) =>
-                    this.handleDragEnd(e)
-                  );
-                } catch (err) {
-                  console.error("Error processing recording:", err);
-                  // Remove failed clip
-                  currentClip.remove();
-                }
-              } else {
-                // Remove empty clip
-                currentClip.remove();
-              }
-              resolve();
-            };
-
-            recorder.stop();
-          } else {
-            resolve();
-          }
-        });
-      });
-
-      // Wait for all recordings to be processed
-      Promise.all(stopPromises).then(() => {
-        this.cleanupRecorders();
-        this.recordingClips = [];
-      });
-    } else {
-      // If not recording, just do normal cleanup
-      this.cleanupRecorders();
+      this.stopRecording();
     }
   }
 
@@ -593,6 +621,11 @@ class AudioEditor {
 
   // Drag and drop handlers
   handleDragStart(e) {
+    if (this.isTrimming) {
+      e.preventDefault();
+      return;
+    }
+    
     // Find the parent clip element if dragging started on a child element
     this.draggedClip = e.target.closest(".clip");
     if (!this.draggedClip) return;
@@ -614,42 +647,79 @@ class AudioEditor {
   handleDragOver(e) {
     e.preventDefault();
     if (this.draggedClip) {
-      // Find the track being dragged over
-      const track = e.target.closest(".track");
-      if (!track) return;
+        const track = e.target.closest(".track");
+        if (!track) return;
 
-      const rect = track.getBoundingClientRect();
-      let newLeft = Math.max(
-        0,
-        e.clientX - rect.left + track.scrollLeft - this.dragOffset
-      );
+        const rect = track.getBoundingClientRect();
+        let newLeft = e.clientX - rect.left + track.scrollLeft - this.dragOffset;
 
-      // Apply snap
-      newLeft = this.calculateSnapPoints(newLeft);
+        // Apply snap
+        newLeft = this.calculateSnapPoints(newLeft);
 
-      // Update clip position
-      this.draggedClip.style.left = `${newLeft}px`;
+        // Calculate the maximum drag distance based on clip duration
+        const clipDuration = this.draggedClip.audioElement.duration;
+        const clipWidth = this.draggedClip.offsetWidth;
+        const originalLeft = this.draggedClip.originalLeft || 0;
+        
+        // Calculate the maximum distance the clip can move in either direction
+        const maxDistance = clipDuration * this.pixelsPerSecond;
+        
+        // Limit movement to original duration in both directions
+        if (newLeft < originalLeft) {
+            // Moving left
+            newLeft = Math.max(newLeft, originalLeft - maxDistance);
+        } else {
+            // Moving right
+            newLeft = Math.min(newLeft, originalLeft + maxDistance);
+        }
 
-      // Move clip to new track during drag
-      if (track !== this.draggedClip.parentElement) {
-        track.appendChild(this.draggedClip);
-      }
+        // Prevent dragging beyond start of timeline
+        newLeft = Math.max(0, newLeft);
+
+        // Update clip position
+        this.draggedClip.style.left = `${newLeft}px`;
+
+        // Move clip to new track during drag
+        if (track !== this.draggedClip.parentElement) {
+            track.appendChild(this.draggedClip);
+        }
     }
   }
 
   handleDrop(e) {
     e.preventDefault();
     if (this.draggedClip) {
-      const track = e.target.closest(".track");
-      if (!track) return;
+        const track = e.target.closest(".track");
+        if (!track) return;
 
-      const rect = track.getBoundingClientRect();
-      const newLeft = Math.max(
-        0,
-        e.clientX - rect.left + track.scrollLeft - this.dragOffset
-      );
-      this.draggedClip.style.left = `${newLeft}px`;
-      // No need to append here since it's already in the correct track
+        const rect = track.getBoundingClientRect();
+        let newLeft = e.clientX - rect.left + track.scrollLeft - this.dragOffset;
+
+        // Apply snap
+        newLeft = this.calculateSnapPoints(newLeft);
+
+        // Calculate the maximum drag distance based on clip duration
+        const clipDuration = this.draggedClip.audioElement.duration;
+        const clipWidth = this.draggedClip.offsetWidth;
+        const originalLeft = this.draggedClip.originalLeft || 0;
+        
+        // Calculate the maximum distance the clip can move in either direction
+        const maxDistance = clipDuration * this.pixelsPerSecond;
+        
+        // Limit movement to original duration in both directions
+        if (newLeft < originalLeft) {
+            // Moving left
+            newLeft = Math.max(newLeft, originalLeft - maxDistance);
+        } else {
+            // Moving right
+            newLeft = Math.min(newLeft, originalLeft + maxDistance);
+        }
+
+        // Prevent dragging beyond start of timeline
+        newLeft = Math.max(0, newLeft);
+
+        // Update clip position
+        this.draggedClip.style.left = `${newLeft}px`;
     }
   }
 
@@ -809,23 +879,31 @@ class AudioEditor {
 
     // Update CSS grid sizes for both containers
     const gridStyle = `
-      /* Bar lines */
-      linear-gradient(90deg, rgba(0, 0, 0, 0.6) 2px, transparent 1px),
-      /* Beat lines */
-      linear-gradient(90deg, rgba(0, 0, 0, 0.35) 2px, transparent 1px),
-      /* Division lines (snap points) */
-      linear-gradient(90deg, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
+        /* Bar lines */
+        linear-gradient(90deg, rgba(0, 0, 0, 0.6) 2px, transparent 1px),
+        /* Beat lines */
+        linear-gradient(90deg, rgba(0, 0, 0, 0.35) 2px, transparent 1px),
+        /* Division lines (snap points) */
+        linear-gradient(90deg, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
     `;
 
     const gridSize = `${pixelsPerBar}px 100%, ${pixelsPerBeat}px 100%, ${pixelsPerDivision}px 100%`;
 
-    this.elements.tracksContainer.style.backgroundImage = gridStyle;
-    this.elements.tracksContainer.style.backgroundSize = gridSize;
-    this.elements.timescale.style.backgroundImage = gridStyle;
-    this.elements.timescale.style.backgroundSize = gridSize;
+    // Add null checks before accessing elements
+    if (this.elements.tracksContainer) {
+        this.elements.tracksContainer.style.backgroundImage = gridStyle;
+        this.elements.tracksContainer.style.backgroundSize = gridSize;
+    }
 
-    // Redraw timescale with division marks
-    this.initializeTimescale();
+    if (this.elements.timescale) {
+        this.elements.timescale.style.backgroundImage = gridStyle;
+        this.elements.timescale.style.backgroundSize = gridSize;
+    }
+
+    // Only redraw timescale if the canvas exists
+    if (this.elements.timescaleCanvas) {
+        this.initializeTimescale();
+    }
   }
 
   initializeBPMControl() {
@@ -1427,6 +1505,118 @@ class AudioEditor {
       this.snapResolution = parseFloat(e.target.value);
       this.updateGrid(); // Update grid when snap resolution changes
     });
+  }
+
+  // Add new method to initialize trim functionality
+  initializeClipTrimming(clip) {
+    const leftHandle = clip.querySelector('.trim-handle.left');
+    const rightHandle = clip.querySelector('.trim-handle.right');
+
+    leftHandle.addEventListener('mousedown', (e) => {
+      this.handleTrimStart(e, clip, 'left');
+    });
+
+    rightHandle.addEventListener('mousedown', (e) => {
+      this.handleTrimStart(e, clip, 'right');
+    });
+
+    // Add document-level handlers for smooth trimming
+    document.addEventListener('mousemove', (e) => this.handleTrimMove(e));
+    document.addEventListener('mouseup', () => this.handleTrimEnd());
+  }
+
+  handleTrimStart(e, clip, side) {
+    e.stopPropagation(); // Prevent drag start
+    
+    this.isTrimming = true;
+    this.trimSide = side;
+    this.currentClip = clip;
+    this.trimStartX = e.clientX;
+    this.trimStartWidth = clip.offsetWidth;
+    this.trimStartLeft = parseInt(clip.style.left) || 0;
+
+    clip.classList.add('trimming');
+  }
+
+  handleTrimMove(e) {
+    if (!this.isTrimming || !this.currentClip) return;
+
+    const deltaX = e.clientX - this.trimStartX;
+    let newWidth, newLeft;
+
+    // Apply snap to trim points
+    const snappedDeltaX = this.calculateSnapPoints(deltaX);
+
+    // Get the maximum width based on audio duration
+    const maxWidth = this.currentClip.audioElement.duration * this.pixelsPerSecond;
+
+    if (this.trimSide === 'left') {
+        // Prevent dragging left handle beyond right edge
+        const maxDeltaX = this.trimStartWidth - 20; // Minimum width of 20px
+        const limitedDeltaX = Math.min(maxDeltaX, snappedDeltaX);
+        
+        newWidth = Math.max(20, this.trimStartWidth - limitedDeltaX);
+        newLeft = this.trimStartLeft + (this.trimStartWidth - newWidth);
+        
+        if (this.currentClip.audioElement) {
+            const timeOffset = newLeft / this.pixelsPerSecond;
+            this.currentClip.startOffset = timeOffset;
+            this.currentClip.audioElement.currentTime = timeOffset;
+            
+            // Redraw waveform with new start offset
+            const canvas = this.currentClip.querySelector('canvas');
+            if (canvas) {
+                canvas.width = newWidth;
+                this.drawWaveform(
+                    this.currentClip.audioBuffer,
+                    canvas,
+                    timeOffset,
+                    this.currentClip.endTime
+                );
+            }
+        }
+    } else {
+        // Prevent extending beyond original duration
+        const maxRightDelta = maxWidth - this.trimStartWidth;
+        const limitedDeltaX = Math.min(maxRightDelta, snappedDeltaX);
+        
+        newWidth = Math.max(20, Math.min(maxWidth, this.trimStartWidth + limitedDeltaX));
+        
+        if (this.currentClip.audioElement) {
+            const endTime = (newWidth / this.pixelsPerSecond) + (this.currentClip.startOffset || 0);
+            this.currentClip.endTime = Math.min(endTime, this.currentClip.audioElement.duration);
+            
+            // Redraw waveform with new end time
+            const canvas = this.currentClip.querySelector('canvas');
+            if (canvas) {
+                canvas.width = newWidth;
+                this.drawWaveform(
+                    this.currentClip.audioBuffer,
+                    canvas,
+                    this.currentClip.startOffset,
+                    this.currentClip.endTime
+                );
+            }
+        }
+    }
+
+    // Update clip size and position
+    this.currentClip.style.width = `${newWidth}px`;
+    if (this.trimSide === 'left') {
+        this.currentClip.style.left = `${newLeft}px`;
+    }
+  }
+
+  handleTrimEnd() {
+    if (!this.isTrimming) return;
+
+    this.isTrimming = false;
+    this.trimSide = null;
+    
+    if (this.currentClip) {
+      this.currentClip.classList.remove('trimming');
+      this.currentClip = null;
+    }
   }
 }
 
